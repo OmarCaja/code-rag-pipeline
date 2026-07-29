@@ -23,4 +23,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "pre-commit>=4.3.0",
 ]
