@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A local RAG system to index and query codebases using LlamaIndex, LanceDB, and Ollama."
 authors = [{ name = "Your Name" }]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "llama-index-core>=0.10.0",
     "llama-index-vector-stores-lancedb>=0.2.0",
@@ -18,6 +18,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "tree-sitter>=0.21.0",
     "tantivy>=0.20.0",
+    "pandas>=3.0.5",
 ]
 
 [dependency-groups]
@@ -25,3 +26,14 @@ dev = [
     "mypy>=1.19.1",
     "pre-commit>=4.3.0",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "lancedb.*"
+]
+ignore_missing_imports = true
