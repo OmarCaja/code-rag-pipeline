@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "code-rag-pipeline"
+version = "0.1.0"
+description = "A local RAG system to index and query codebases using LlamaIndex, LanceDB, and Ollama."
+authors = [{ name = "Your Name" }]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "llama-index-core>=0.10.0",
+    "llama-index-vector-stores-lancedb>=0.2.0",
+    "llama-index-llms-ollama>=0.2.0",
+    "llama-index-embeddings-ollama>=0.2.0",
+    "lancedb>=0.6.0",
+    "pydantic>=2.0.0",
+    "tree-sitter>=0.21.0",
+    "tantivy>=0.20.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+]
