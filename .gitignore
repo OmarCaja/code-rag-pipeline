@@ -6,23 +6,52 @@
 build/
 dist/
 wheels/
+__pycache__/
+*.py[cod]       # Covers .pyc, .pyo, and .pyd files
+*$py.class
+
+# ==========================================
+# Testing & Static Analysis
+# ==========================================
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # ==========================================
 # Virtual Environments & UV
 # ==========================================
 .venv/
 venv/
+ENV/
+env/
 .uv/
 
 # ==========================================
 # Vector DB & Storage Data
 # ==========================================
 *.lance/
+*.lancedb/
+lancedb_data/   # Common default output directory for LanceDB
 data/
+*.sqlite
+*.db
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.local
+*.env
 
 # ==========================================
 # IDE & OS Files
 # ==========================================
 .vscode/
+!.vscode/settings.json  # Optional: keep if sharing team VSCode config
 .idea/
+*.swp
+*.swo
 .DS_Store
+Thumbs.db

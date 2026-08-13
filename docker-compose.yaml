@@ -1,0 +1,56 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Primary Ollama Server
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: code_rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Init Service: Model Downloader
+  # Pulls models into shared volume. Run on demand with:
+  # docker compose --profile init up
+  # ---------------------------------------------------------------------------
+  ollama-pull-models:
+    image: ollama/ollama:latest
+    container_name: code_rag_ollama_pull
+    profiles:
+      - init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ollama_storage:/root/.ollama
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "==> Waiting for Ollama server API to be reachable..."
+        until ollama list > /dev/null 2>&1; do
+          sleep 2
+        done
+
+        echo "==> Downloading Embedding Model (nomic-embed-text)..."
+        ollama pull nomic-embed-text
+        
+        echo "==> Downloading Reasoning / Code LLM (qwen2.5-coder:7b)..."
+        ollama pull qwen2.5-coder:7b
+        
+        echo "==> All models downloaded successfully!"
+
+volumes:
+  ollama_storage:
+    name: code_rag_ollama_storage
