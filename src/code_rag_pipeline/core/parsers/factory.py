@@ -3,10 +3,10 @@ from typing import Sequence
 
 from llama_index.core.schema import BaseNode, Document
 
-from code_rag_pipeline.core import BaseCodeParser
-from code_rag_pipeline.core import FallbackParser
-from code_rag_pipeline.core import PythonCodeParser
 from code_rag_pipeline.utils import group_documents_by_extension
+from .base import BaseCodeParser
+from .fallback_parser import FallbackParser
+from .python_parser import PythonCodeParser
 
 logger = logging.getLogger(__name__)
 

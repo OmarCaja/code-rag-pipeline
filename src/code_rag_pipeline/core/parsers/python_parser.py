@@ -1,10 +1,13 @@
 import logging
 from typing import Sequence
+
 from llama_index.core.node_parser import CodeSplitter
 from llama_index.core.schema import BaseNode, Document
-from code_rag_pipeline.core.parsers.base import BaseCodeParser
+
+from code_rag_pipeline.core.parsers import BaseCodeParser
 
 logger = logging.getLogger(__name__)
+
 
 class PythonCodeParser(BaseCodeParser):
     """Handles AST-based code splitting for Python files."""
