@@ -1,18 +1,21 @@
 import logging
+from pathlib import Path
 
-from config.settings import setup_llama_settings, DEFAULT_OLLAMA_HOST
-from utils.logger import setup_logging
+from code_rag_pipeline.config import setup_llama_settings, DEFAULT_OLLAMA_HOST
+from code_rag_pipeline.core import load_documents
+from code_rag_pipeline.utils import setup_logging
 
 setup_logging()
 
 logger = logging.getLogger(__name__)
 
-if __name__ == "__main__":
+
+def main() -> None:
     logger.info("Starting Ollama service connectivity check...")
 
-    test_llm, test_embed = setup_llama_settings()
-
     try:
+        test_llm, test_embed = setup_llama_settings()
+
         logger.info("Testing LLM completion endpoint...")
         response = test_llm.complete("Write a Python palindrome check function.")
 
@@ -29,7 +32,16 @@ if __name__ == "__main__":
 
     except Exception as error:
         logger.exception(
-            "Failed to communicate with Ollama service at '%s'. Context: %s",
+            "Failed to communicate with Ollama service at host '%s'.",
             DEFAULT_OLLAMA_HOST,
-            error,
+            error
         )
+
+    logger.info("Loading documents from ./src folder...")
+
+    project_src_dir = Path(__file__).parent.resolve()  # Points to ./src
+    load_documents(project_src_dir)
+
+
+if __name__ == "__main__":
+    main()
