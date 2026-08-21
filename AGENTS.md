@@ -25,10 +25,11 @@ Models must be pulled before the pipeline runs; a missing model fails at the liv
 - `core/parsers/` — `CodeParserOrchestrator` (factory.py) routes documents by file extension to a parser; `.py` → `PythonCodeParser` (AST-based `CodeSplitter`), everything else / parse failures → `FallbackParser` (token splitter). Add a new language by registering in `_parser_map` in `factory.py`.
 - `storage/vector_index.py` — `index_nodes()` (re-exported as `code_rag_pipeline.storage.index_nodes`) embeds BaseNodes via global `Settings.embed_model` into a `LanceDBVectorStore` (default `data/lancedb`, one table per project, `mode="overwrite"`) and persists the docstore to `data/index/{project}`.
 - Public API is re-exported through package `__init__.py` files (`config`, `core`, `utils`); import from those namespaces, not deep module paths.
-- `utils/logger.py` `setup_logging()` must run before other imports trigger loggers; it also silences noisy third-party loggers.
+- `config/logging.py` `setup_logging()` must run before other imports trigger loggers; it also silences noisy third-party loggers.
 
 ## Gotchas
 
 - `data/` (incl. LanceDB output) is gitignored — generated artifacts, never commit.
-- `README.md` is empty; this file is the source of truth for how the system works.
+- `README.md` has project overview; this file is the source of truth for internals.
 - The pre-commit hook writes nothing to the repo; `pyproject.toml` mypy override for `lancedb.*` is currently unused (no direct lancedb imports yet).
+- CLI uses `@app.callback()` for shared `setup_logging()` — don't add it back to individual commands.
