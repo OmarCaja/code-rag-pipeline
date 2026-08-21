@@ -2,13 +2,13 @@ import logging
 from pathlib import Path
 from typing import Annotated
 
+import questionary
 import typer
 from llama_index.core import PromptTemplate
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Prompt
-from rich.table import Table
 
+from code_rag_pipeline import __version__
 from code_rag_pipeline.config import SYSTEM_PROMPT, setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
 from code_rag_pipeline.storage import index_nodes, list_projects, load_index
@@ -28,97 +28,93 @@ def main(
 ) -> None:
     setup_logging(logging.DEBUG if verbose else logging.WARNING)
 
-    console.print(Panel.fit("[bold cyan]Code RAG Pipeline[/bold cyan]", subtitle="Local code intelligence"))
-    console.print()
+    console.print(f"[bold cyan]Code RAG Pipeline[/bold cyan] [dim]v{__version__}[/dim]\n")
 
-    choice = Prompt.ask(
+    choice = questionary.select(
         "What do you want to do?",
-        choices=["index", "chat"],
-        default="chat",
-    )
+        choices=["Chat with a project", "Index a new project"],
+    ).ask()
 
-    if choice == "index":
+    if choice is None:
+        return
+
+    if choice == "Index a new project":
         _do_index()
     else:
         _do_chat()
 
 
 def _do_index() -> None:
-    console.print(Panel.fit("[bold cyan]Index Project[/bold cyan]"))
     console.print()
+    name = questionary.text("Project name:").ask()
+    if not name:
+        return
 
-    name = Prompt.ask("[cyan]Project name[/cyan]")
-    path_str = Prompt.ask("[cyan]Path to project (absolute or relative)[/cyan]")
+    path_str = questionary.text("Path to project (absolute or relative):").ask()
+    if not path_str:
+        return
+
     path = Path(path_str).expanduser().resolve()
 
     if not path.is_dir():
-        console.print(f"[red]Not a directory: {path}[/red]")
+        console.print(f"\n[red]✗ Not a directory:[/red] {path}")
         return
 
-    console.print(f"\n[bold cyan]Starting pipeline for project:[/bold cyan] {name}")
-    console.print(f"[cyan]Target path:[/cyan] {path}\n")
+    console.print()
+    console.print(Panel(
+        f"[bold]{name}[/bold]\n[dim]{path}[/dim]",
+        title="[cyan]Indexing Project[/cyan]",
+        border_style="cyan",
+    ))
+    console.print()
 
     try:
-        console.print("Loading documents...")
-        documents = load_documents(path)
-        console.print(f"Loaded [bold]{len(documents)}[/bold] documents.\n")
+        with console.status("[cyan]Loading documents...[/cyan]", spinner="dots"):
+            documents = load_documents(path)
+        console.print(f"  [green]✓[/green] Loaded [bold]{len(documents)}[/bold] documents")
 
-        console.print("Parsing code and splitting into nodes...")
-        orchestrator = CodeParserOrchestrator()
-        nodes = orchestrator.split_documents(documents)
-        console.print(f"Generated [bold]{len(nodes)}[/bold] semantic nodes.\n")
+        with console.status("[cyan]Parsing and splitting...[/cyan]", spinner="dots"):
+            orchestrator = CodeParserOrchestrator()
+            nodes = orchestrator.split_documents(documents)
+        console.print(f"  [green]✓[/green] Generated [bold]{len(nodes)}[/bold] nodes")
 
-        console.print("Embedding nodes and storing in LanceDB...")
-        setup_llama_settings()
-        index_nodes(nodes, name)
-        console.print("Nodes embedded and stored in LanceDB.\n")
+        with console.status("[cyan]Embedding and storing...[/cyan]", spinner="dots"):
+            setup_llama_settings()
+            index_nodes(nodes, name)
+        console.print(f"  [green]✓[/green] Stored in LanceDB")
 
-        console.print("[bold green]Pipeline executed successfully![/bold green]")
+        console.print()
+        console.print(Panel("[bold green]Done![/bold green]", border_style="green"))
 
     except Exception as err:
         logger.exception("An unexpected error occurred during processing.")
-        console.print(f"[bold red]Processing failed:[/bold red] {err}")
+        console.print(f"\n[red]✗ Processing failed:[/red] {err}")
 
 
 def _do_chat() -> None:
-    console.print(Panel.fit("[bold cyan]Chat with Project[/bold cyan]"))
     console.print()
 
     projects = list_projects()
 
     if not projects:
         console.print("[yellow]No projects indexed yet.[/yellow]")
-        console.print("[dim]Run 'code-rag index' to index a project first.[/dim]")
+        console.print("[dim]  Run 'code-rag' and select 'Index a new project' first.[/dim]")
         return
 
-    table = Table(show_header=False, show_lines=False, padding=(0, 2))
-    table.add_column("NUM", style="dim")
-    table.add_column("PROJECT", style="cyan bold")
-    for i, p in enumerate(projects, 1):
-        table.add_row(str(i), p)
-    console.print(table)
-    console.print()
+    project_name = questionary.select(
+        "Select a project:",
+        choices=projects,
+    ).ask()
 
-    selection = Prompt.ask(
-        "[cyan]Select project (number or name)[/cyan]",
-        choices=[str(i) for i in range(1, len(projects) + 1)] + projects,
-        default="1",
-    )
-
-    if selection.isdigit():
-        idx = int(selection) - 1
-        if idx < 0 or idx >= len(projects):
-            console.print("[red]Invalid selection.[/red]")
-            return
-        project_name = projects[idx]
-    else:
-        project_name = selection
+    if not project_name:
+        return
 
     try:
-        setup_llama_settings()
-        index = load_index(project_name)
+        with console.status("[cyan]Loading index...[/cyan]", spinner="dots"):
+            setup_llama_settings()
+            index = load_index(project_name)
     except FileNotFoundError as err:
-        console.print(f"[red]{err}[/red]")
+        console.print(f"\n[red]✗ {err}[/red]")
         return
 
     query_engine = index.as_query_engine(
@@ -126,26 +122,40 @@ def _do_chat() -> None:
         text_qa_template=PromptTemplate(SYSTEM_PROMPT),
     )
 
-    console.print(f"\n[bold green]Chatting with project:[/bold green] {project_name}")
-    console.print("[dim]Type 'exit' or 'quit' to leave.[/dim]\n")
+    console.print()
+    console.print(Panel(
+        f"[bold]{project_name}[/bold]",
+        title="[cyan]Chat Mode[/cyan]",
+        subtitle="[dim]Type 'exit' to leave[/dim]",
+        border_style="green",
+    ))
+    console.print()
 
     while True:
         try:
-            question = Prompt.ask("[bold cyan]You[/bold cyan]")
+            question = questionary.text("You:").ask()
         except (KeyboardInterrupt, EOFError):
             console.print("\n[dim]Bye![/dim]")
             break
 
-        if question.strip().lower() in ("exit", "quit", "q"):
+        if question is None or question.strip().lower() in ("exit", "quit", "q"):
             console.print("[dim]Bye![/dim]")
             break
 
         if not question.strip():
             continue
 
-        with console.status("[bold cyan]Thinking...[/bold cyan]", spinner="dots"):
+        with console.status("[cyan]Thinking...[/cyan]", spinner="dots"):
             response = query_engine.query(question)
-        console.print(f"\n[bold green]Assistant:[/bold green] {response}\n")
+
+        console.print()
+        console.print(Panel(
+            str(response),
+            title="[green]Assistant[/green]",
+            border_style="green",
+            padding=(0, 1),
+        ))
+        console.print()
 
 
 if __name__ == "__main__":
