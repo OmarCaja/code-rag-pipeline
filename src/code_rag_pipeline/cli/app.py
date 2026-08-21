@@ -8,7 +8,7 @@ from rich.console import Console
 from code_rag_pipeline.config import setup_llama_settings
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
 from code_rag_pipeline.storage import index_nodes, load_index
-from code_rag_pipeline.utils import setup_logging
+from code_rag_pipeline.config import setup_logging
 
 app = typer.Typer(
     name="code-rag",
@@ -21,6 +21,11 @@ console = Console()
 logger = logging.getLogger(__name__)
 
 
+@app.callback()
+def setup() -> None:
+    setup_logging(logging.WARNING)
+
+
 @app.command("index")
 def index_project(
         name: Annotated[str, typer.Argument(help="The unique name for this project.")],
@@ -29,8 +34,6 @@ def index_project(
     """
     Reads a project directory and parses the code into semantic chunks (BaseNodes).
     """
-    setup_logging()
-
     console.print(f"\n[bold cyan]Starting pipeline for project:[/bold cyan] {name}")
     console.print(f"[cyan]Target path:[/cyan] {path.resolve()}\n")
 
@@ -72,7 +75,6 @@ def query_project(
     """
     Asks a question about an indexed project, answering from its code.
     """
-    setup_logging()
     setup_llama_settings()
 
     console.print(f"\n[bold cyan]Querying project:[/bold cyan] {name}")
