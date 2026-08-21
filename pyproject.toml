@@ -52,6 +52,17 @@ embed_model = "nomic-embed-text"
 data_dir = "data"
 supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
 exclude_paths = ["**/data/**"]
+system_prompt = """
+You are a code assistant. Answer the question based on the code context below.
+Cite specific file paths when relevant.
+
+Context:
+{context_str}
+
+Question: {query_str}
+
+Answer:
+"""
 
 [tool.code-rag.ext_map]
 py = "python"
