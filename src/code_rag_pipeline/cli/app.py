@@ -5,7 +5,9 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
+from code_rag_pipeline.config import setup_llama_settings
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
+from code_rag_pipeline.storage import index_nodes, load_index
 from code_rag_pipeline.utils import setup_logging
 
 app = typer.Typer(
@@ -32,11 +34,6 @@ def index_project(
     console.print(f"\n[bold cyan]Starting pipeline for project:[/bold cyan] {name}")
     console.print(f"[cyan]Target path:[/cyan] {path.resolve()}\n")
 
-    # Temporarily silence verbose logs so the output stays clean
-    root_logger = logging.getLogger()
-    previous_level = root_logger.level
-    root_logger.setLevel(logging.WARNING)
-
     try:
 
         # 1. Load Documents
@@ -50,7 +47,13 @@ def index_project(
         nodes = orchestrator.split_documents(documents)
         console.print(f"✅ Generated [bold]{len(nodes)}[/bold] semantic nodes.\n")
 
-        console.print("[bold green]Pipeline executed successfully![/bold green] Nodes are ready for embedding.")
+        # 3. Embed Nodes and Store in LanceDB
+        console.print("🧠 Embedding nodes and storing in LanceDB...")
+        setup_llama_settings()
+        index_nodes(nodes, name)
+        console.print("✅ Nodes embedded and stored in LanceDB.\n")
+
+        console.print("[bold green]Pipeline executed successfully![/bold green]")
 
     except NotADirectoryError as err:
         console.print(f"[bold red]Directory Error:[/bold red] {err}")
@@ -60,8 +63,33 @@ def index_project(
         console.print(f"[bold red]Processing failed:[/bold red] {err}")
         raise typer.Exit(code=1)
 
-    finally:
-        root_logger.setLevel(previous_level)
+
+@app.command("query")
+def query_project(
+        name: Annotated[str, typer.Argument(help="The indexed project name to query.")],
+        question: Annotated[str, typer.Argument(help="The question to ask about the code.")],
+) -> None:
+    """
+    Asks a question about an indexed project, answering from its code.
+    """
+    setup_logging()
+    setup_llama_settings()
+
+    console.print(f"\n[bold cyan]Querying project:[/bold cyan] {name}")
+    console.print(f"[cyan]Question:[/cyan] {question}\n")
+
+    try:
+        index = load_index(name)
+        query_engine = index.as_query_engine()
+        response = query_engine.query(question)
+        console.print(f"[bold green]Answer:[/bold green]\n{response}\n")
+    except FileNotFoundError as err:
+        console.print(f"[bold red]Index Error:[/bold red] {err}")
+        raise typer.Exit(code=1)
+    except Exception as err:
+        logger.exception("An unexpected error occurred during querying.")
+        console.print(f"[bold red]Query failed:[/bold red] {err}")
+        raise typer.Exit(code=1)
 
 
 @app.command("list")
