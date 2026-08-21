@@ -3,10 +3,9 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from llama_index.core import PromptTemplate
 from rich.console import Console
 from rich.table import Table
-
-from llama_index.core import PromptTemplate
 
 from code_rag_pipeline.config import setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
@@ -15,7 +14,6 @@ from code_rag_pipeline.storage import index_nodes, list_projects, load_index
 app = typer.Typer(
     name="code-rag",
     help="Local RAG system to index and query codebases.",
-    add_completion=False,
     no_args_is_help=True,
 )
 
