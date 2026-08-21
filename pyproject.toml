@@ -52,3 +52,14 @@ embed_model = "nomic-embed-text"
 data_dir = "data"
 supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
 exclude_paths = ["**/data/**"]
+
+[tool.code-rag.ext_map]
+py = "python"
+js = "javascript"
+ts = "typescript"
+json = "json"
+md = "markdown"
+toml = "toml"
+yaml = "yaml"
+less = "less"
+css = "css"

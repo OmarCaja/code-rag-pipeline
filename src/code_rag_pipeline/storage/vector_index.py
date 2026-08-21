@@ -66,3 +66,10 @@ def load_index(
 
     logger.info("Loaded index for project '%s' (%s).", project_name, LANCEDB_URI)
     return cast(VectorStoreIndex, load_index_from_storage(storage_context))
+
+
+def list_projects() -> list[str]:
+    """Returns names of all indexed projects (subdirectories in INDEX_DIR)."""
+    if not INDEX_DIR.exists():
+        return []
+    return sorted(p.name for p in INDEX_DIR.iterdir() if p.is_dir())

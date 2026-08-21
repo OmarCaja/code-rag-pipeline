@@ -4,7 +4,7 @@ from pathlib import Path
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import Document
 
-from code_rag_pipeline.config import EXCLUDE_PATHS, SUPPORTED_EXTENSIONS
+from code_rag_pipeline.config import EXCLUDE_PATHS, EXT_MAP, SUPPORTED_EXTENSIONS
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,12 @@ def load_documents(target_dir: Path | str) -> list[Document]:
     )
 
     documents = reader.load_data()
+
+    for doc in documents:
+        file_path = doc.metadata.get("file_path", "")
+        ext = Path(str(file_path)).suffix.lower()
+        doc.metadata["language"] = EXT_MAP.get(ext, "text")
+
     loaded_files = [doc.metadata.get("file_path", "Unknown Path") for doc in documents]
     logger.info("Successfully loaded %d document(s).", len(documents))
     logger.debug("Loaded files:\n%s", "\n".join(f" - {file}" for file in loaded_files))

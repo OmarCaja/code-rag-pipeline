@@ -4,10 +4,13 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.table import Table
+
+from llama_index.core import PromptTemplate
 
 from code_rag_pipeline.config import setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
-from code_rag_pipeline.storage import index_nodes, load_index
+from code_rag_pipeline.storage import index_nodes, list_projects, load_index
 
 app = typer.Typer(
     name="code-rag",
@@ -81,7 +84,16 @@ def query_project(
 
     try:
         index = load_index(name)
-        query_engine = index.as_query_engine()
+        query_engine = index.as_query_engine(
+            similarity_top_k=5,
+            text_qa_template=PromptTemplate(
+                "You are a code assistant. Answer the question based on the code context below.\n"
+                "Cite specific file paths when relevant.\n\n"
+                "Context:\n{context_str}\n\n"
+                "Question: {query_str}\n\n"
+                "Answer:"
+            ),
+        )
         response = query_engine.query(question)
         console.print(f"[bold green]Answer:[/bold green]\n{response}\n")
     except FileNotFoundError as err:
@@ -94,11 +106,26 @@ def query_project(
 
 
 @app.command("list")
-def list_projects() -> None:
+def list_projects_command() -> None:
     """
     List all indexed projects in the system.
     """
-    console.print("[yellow]Feature coming soon: Listing indexed projects...[/yellow]")
+    projects = list_projects()
+
+    if not projects:
+        console.print("[yellow]No projects indexed yet.[/yellow]")
+        return
+
+    table = Table(title="Indexed Projects", show_lines=True)
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Project", style="cyan bold")
+    table.add_column("Status", style="green")
+
+    for i, name in enumerate(projects, 1):
+        table.add_row(str(i), name, "Ready")
+
+    console.print()
+    console.print(table)
 
 
 if __name__ == "__main__":

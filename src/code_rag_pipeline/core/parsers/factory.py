@@ -5,6 +5,7 @@ from llama_index.core.schema import BaseNode, Document
 
 from code_rag_pipeline.utils import group_documents_by_extension
 from .base import BaseCodeParser
+from .config_parser import ConfigParser
 from .fallback_parser import FallbackParser
 from .python_parser import PythonCodeParser
 
@@ -16,14 +17,14 @@ class CodeParserOrchestrator:
 
     def __init__(self) -> None:
         self._python_parser = PythonCodeParser()
+        self._config_parser = ConfigParser()
         self._fallback_parser = FallbackParser()
 
-        # Strategy Map: Map file extensions to their specialized parsers
         self._parser_map: dict[str, BaseCodeParser] = {
             ".py": self._python_parser,
-            # Easily extend with new parsers in the future:
-            # ".astro": AstroCodeParser(),
-            # ".ts": TypescriptParser(),
+            ".json": self._config_parser,
+            ".toml": self._config_parser,
+            ".yaml": self._config_parser,
         }
 
     def split_documents(self, documents: Sequence[Document]) -> list[BaseNode]:
