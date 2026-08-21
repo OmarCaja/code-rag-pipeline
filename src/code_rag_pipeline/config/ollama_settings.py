@@ -1,6 +1,5 @@
 import logging
-import os
-from typing import Tuple
+from typing import cast
 
 from llama_index.core import Settings
 from llama_index.core.embeddings import BaseEmbedding
@@ -8,19 +7,17 @@ from llama_index.core.llms import LLM
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.llms.ollama import Ollama
 
-logger = logging.getLogger(__name__)
+from code_rag_pipeline.config import EMBED_MODEL, LLM_MODEL, OLLAMA_HOST
 
-DEFAULT_OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-DEFAULT_LLM_MODEL: str = os.getenv("LLM_MODEL", "qwen2.5-coder:7b")
-DEFAULT_EMBED_MODEL: str = os.getenv("EMBED_MODEL", "nomic-embed-text")
+logger = logging.getLogger(__name__)
 
 
 def setup_llama_settings(
-        llm_model: str = DEFAULT_LLM_MODEL,
-        embed_model_name: str = DEFAULT_EMBED_MODEL,
-        ollama_host: str = DEFAULT_OLLAMA_HOST,
+        llm_model: str = LLM_MODEL,
+        embed_model_name: str = EMBED_MODEL,
+        ollama_host: str = OLLAMA_HOST,
         query_instruction: str = "search_query: ",
-) -> Tuple[LLM, BaseEmbedding]:
+) -> tuple[LLM, BaseEmbedding]:
     """Configures LlamaIndex global settings to connect with local Ollama services."""
 
     logger.info(
@@ -36,11 +33,11 @@ def setup_llama_settings(
         request_timeout=120.0,
     )
 
-    embed_model: BaseEmbedding = OllamaEmbedding(
+    embed_model = cast(BaseEmbedding, OllamaEmbedding(
         model_name=embed_model_name,
         base_url=ollama_host,
         query_instruction=query_instruction,
-    )
+    ))
 
     Settings.llm = llm
     Settings.embed_model = embed_model

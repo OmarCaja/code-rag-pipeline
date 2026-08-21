@@ -1,10 +1,10 @@
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import BaseNode, Document
 
-from code_rag_pipeline.core.parsers import BaseCodeParser
+from .base import BaseCodeParser
 
 logger = logging.getLogger(__name__)
 

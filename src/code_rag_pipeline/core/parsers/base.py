@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
+
 from llama_index.core.schema import BaseNode, Document
+
 
 class BaseCodeParser(ABC):
     """Abstract interface for all document/code splitting strategies."""

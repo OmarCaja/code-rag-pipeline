@@ -5,10 +5,9 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from code_rag_pipeline.config import setup_llama_settings
+from code_rag_pipeline.config import setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
 from code_rag_pipeline.storage import index_nodes, load_index
-from code_rag_pipeline.config import setup_logging
 
 app = typer.Typer(
     name="code-rag",

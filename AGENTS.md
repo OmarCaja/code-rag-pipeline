@@ -20,7 +20,9 @@ Models must be pulled before the pipeline runs; a missing model fails at the liv
 
 ## Architecture
 
-- `config/settings.py` — `setup_llama_settings()` mutates LlamaIndex global `Settings` (LLM + embedding). Reads env vars: `OLLAMA_HOST`, `LLM_MODEL`, `EMBED_MODEL`.
+- `config/config.py` — reads `[tool.code-rag]` from `pyproject.toml` via `tomllib` (stdlib). Source of truth for all defaults: `OLLAMA_HOST`, `LLM_MODEL`, `EMBED_MODEL`, `DATA_DIR`.
+- `config/ollama_settings.py` — `setup_llama_settings()` mutates LlamaIndex global `Settings` (LLM + embedding). Values come from `config/config.py`.
+- `config/lancedb_settings.py` — `LANCEDB_URI`, `INDEX_DIR` paths. Derived from `DATA_DIR` in `config/config.py`.
 - `core/loaders/document_loader.py` — `SimpleDirectoryReader` restricted to `SUPPORTED_EXTENSIONS` (`.py .js .ts .less .css .json .md`), recursive, hidden files excluded.
 - `core/parsers/` — `CodeParserOrchestrator` (factory.py) routes documents by file extension to a parser; `.py` → `PythonCodeParser` (AST-based `CodeSplitter`), everything else / parse failures → `FallbackParser` (token splitter). Add a new language by registering in `_parser_map` in `factory.py`.
 - `storage/vector_index.py` — `index_nodes()` (re-exported as `code_rag_pipeline.storage.index_nodes`) embeds BaseNodes via global `Settings.embed_model` into a `LanceDBVectorStore` (default `data/lancedb`, one table per project, `mode="overwrite"`) and persists the docstore to `data/index/{project}`.

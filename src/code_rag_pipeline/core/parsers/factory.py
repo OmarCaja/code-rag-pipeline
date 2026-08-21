@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 from llama_index.core.schema import BaseNode, Document
 

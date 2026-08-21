@@ -44,3 +44,9 @@ module = [
     "lancedb.*"
 ]
 ignore_missing_imports = true
+
+[tool.code-rag]
+ollama_host = "http://localhost:11434"
+llm_model = "qwen2.5-coder:7b"
+embed_model = "nomic-embed-text"
+data_dir = "data"
