@@ -8,9 +8,9 @@ THIRD_PARTY_LOGGERS: Final[dict[str, int]] = {
     "httpcore": logging.WARNING,
     "urllib3": logging.WARNING,
     "asyncio": logging.WARNING,
-    "llama_index": logging.INFO,
+    "llama_index": logging.WARNING,
     "llama_index.core.readers.file.base": logging.ERROR,
-    "fsspec.local": logging.WARNING
+    "fsspec.local": logging.WARNING,
 }
 
 

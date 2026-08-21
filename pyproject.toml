@@ -50,3 +50,5 @@ ollama_host = "http://localhost:11434"
 llm_model = "qwen2.5-coder:7b"
 embed_model = "nomic-embed-text"
 data_dir = "data"
+supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
+exclude_paths = ["**/data/**"]

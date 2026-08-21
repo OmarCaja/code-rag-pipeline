@@ -4,17 +4,9 @@ from pathlib import Path
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import Document
 
-logger = logging.getLogger(__name__)
+from code_rag_pipeline.config import EXCLUDE_PATHS, SUPPORTED_EXTENSIONS
 
-SUPPORTED_EXTENSIONS: list[str] = [
-    ".py",
-    ".js",
-    ".ts",
-    ".less",
-    ".css",
-    ".json",
-    ".md",
-]
+logger = logging.getLogger(__name__)
 
 
 def load_documents(target_dir: Path | str) -> list[Document]:
@@ -40,7 +32,8 @@ def load_documents(target_dir: Path | str) -> list[Document]:
         input_dir=path,
         required_exts=SUPPORTED_EXTENSIONS,
         recursive=True,
-        exclude_hidden=True,  # Ignores .git, .venv, etc.
+        exclude_hidden=True,
+        exclude=EXCLUDE_PATHS,
     )
 
     documents = reader.load_data()

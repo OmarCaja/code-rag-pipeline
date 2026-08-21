@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 @app.callback()
 def setup() -> None:
-    setup_logging(logging.WARNING)
+    setup_logging()
 
 
 @app.command("index")
