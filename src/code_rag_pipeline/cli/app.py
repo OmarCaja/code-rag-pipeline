@@ -79,7 +79,7 @@ def _do_index() -> None:
         with console.status("[cyan]Embedding and storing...[/cyan]", spinner="dots"):
             setup_llama_settings()
             index_nodes(nodes, name)
-        console.print(f"  [green]✓[/green] Stored in LanceDB")
+        console.print("  [green]✓[/green] Stored in LanceDB")
 
         console.print()
         console.print(Panel("[bold green]Done![/bold green]", border_style="green"))

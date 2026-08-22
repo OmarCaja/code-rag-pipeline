@@ -1,14 +1,12 @@
 import logging
 from collections.abc import Sequence
-from typing import cast
 
-from llama_index.core import StorageContext, VectorStoreIndex, load_index_from_storage
+import lancedb
+from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import BaseNode
-from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.core.storage.index_store import SimpleIndexStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 
-from code_rag_pipeline.config import INDEX_DIR, LANCEDB_URI
+from code_rag_pipeline.config import LANCEDB_URI
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +17,8 @@ def index_nodes(
 ) -> VectorStoreIndex:
     """Embeds nodes via the global `Settings.embed_model` and stores them in LanceDB.
 
-    Uses one shared LanceDB directory with a table per project. The docstore/index
-    is persisted alongside so the index can be reloaded later for queries.
+    One LanceDB table per project. LanceDB stores vectors + text, no separate
+    docstore needed.
 
     Args:
         nodes: Nodes produced by the document parsers/splitters.
@@ -29,14 +27,8 @@ def index_nodes(
     Returns:
         The built VectorStoreIndex, ready for querying.
     """
-    persist = INDEX_DIR / project_name
-
-    # mode="overwrite" nukes the table on each run -> reindex is idempotent
     vector_store = LanceDBVectorStore(uri=str(LANCEDB_URI), table_name=project_name, mode="overwrite")
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-
-    index = VectorStoreIndex(nodes=nodes, storage_context=storage_context)
-    index.storage_context.persist(persist_dir=str(persist))
+    index = VectorStoreIndex(nodes=nodes, storage_context=StorageContext.from_defaults(vector_store=vector_store))
 
     logger.info("Stored %d node(s) in LanceDB table '%s' (%s).", len(nodes), project_name, LANCEDB_URI)
     return index
@@ -47,29 +39,18 @@ def load_index(
 ) -> VectorStoreIndex:
     """Reloads a previously indexed project for querying.
 
-    LanceDB lives outside the persist dir, so the vector store must be re-attached
-    explicitly; docstore/index metadata come from the persisted JSON.
-
     Args:
         project_name: Indexed project to load; used as the LanceDB table name.
     """
-    persist = INDEX_DIR / project_name
-
-    if not (persist / "index_store.json").exists():
+    if project_name not in list_projects():
         raise FileNotFoundError(
             f"No index found for project '{project_name}'. Run 'code-rag index {project_name} <path>' first.")
 
     vector_store = LanceDBVectorStore(uri=str(LANCEDB_URI), table_name=project_name)
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    storage_context.docstore = SimpleDocumentStore.from_persist_dir(str(persist))
-    storage_context.index_store = SimpleIndexStore.from_persist_dir(str(persist))
-
-    logger.info("Loaded index for project '%s' (%s).", project_name, LANCEDB_URI)
-    return cast(VectorStoreIndex, load_index_from_storage(storage_context))
+    return VectorStoreIndex.from_vector_store(vector_store)
 
 
 def list_projects() -> list[str]:
-    """Returns names of all indexed projects (subdirectories in INDEX_DIR)."""
-    if not INDEX_DIR.exists():
-        return []
-    return sorted(p.name for p in INDEX_DIR.iterdir() if p.is_dir())
+    """Returns names of all indexed projects (LanceDB tables)."""
+    db = lancedb.connect(str(LANCEDB_URI))
+    return sorted(table_name for table_name in db.table_names() if not table_name.startswith("_"))
