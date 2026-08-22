@@ -31,48 +31,72 @@ This pulls two models into a shared Docker volume:
 - `nomic-embed-text` — embeddings
 - `qwen2.5-coder:7b` — code reasoning
 
-### Index a Project
+### Run
 
 ```bash
-uv run code-rag index my-project /path/to/your/codebase
+uv run code-rag
 ```
 
-### Query Your Code
+Interactive menu:
+1. **Chat with a project** — select an indexed project and ask questions
+2. **Index a new project** — provide a path, project name is derived from the folder
 
-```bash
-uv run code-rag query my-project "How does the document loader work?"
+## Configuration
+
+All settings live in `pyproject.toml` under `[tool.code-rag]`:
+
+```toml
+[tool.code-rag]
+ollama_host = "http://localhost:11434"
+llm_model = "qwen2.5-coder:7b"
+embed_model = "nomic-embed-text"
+data_dir = "data"
+supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
+exclude_paths = ["**/data/**"]
+system_prompt = """
+You are a code assistant. Answer the question based on the code context below.
+Cite specific file paths when relevant.
+
+Context:
+{context_str}
+
+Question: {query_str}
+
+Answer:
+"""
+
+[tool.code-rag.ext_map]
+py = "python"
+js = "javascript"
+ts = "typescript"
+json = "json"
+md = "markdown"
+toml = "toml"
+yaml = "yaml"
+less = "less"
+css = "css"
 ```
-
-## CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `index <name> <path>` | Parse and embed a codebase into LanceDB |
-| `query <name> <question>` | Ask a question about an indexed project |
-| `list` | List all indexed projects |
 
 ## Architecture
 
 ```
 src/code_rag_pipeline/
-├── cli/            # Typer CLI app
-├── config/         # LLM settings, logging
-├── core/           # Document loading & code parsing
-│   ├── loaders/    # File reader (SimpleDirectoryReader)
-│   └── parsers/    # AST-based & fallback code splitters
-├── storage/        # LanceDB vector store + docstore persistence
-└── utils/          # Helpers
+├── cli/                # Interactive CLI (Typer + Questionary + Rich)
+├── config/
+│   ├── config.py       # Reads [tool.code-rag] from pyproject.toml
+│   ├── lancedb_settings.py  # LanceDB/index paths
+│   ├── logging.py      # Colored logging setup
+│   └── ollama_settings.py   # LlamaIndex Settings (LLM + embedding)
+├── core/
+│   ├── loaders/        # SimpleDirectoryReader with metadata enrichment
+│   └── parsers/        # AST-based & fallback code splitters
+│       ├── python_parser.py   # Python → CodeSplitter (AST)
+│       ├── config_parser.py   # JSON/TOML/YAML → small token chunks
+│       └── fallback_parser.py # Everything else → token splitter
+├── storage/
+│   └── vector_index.py # LanceDB vector store + docstore persistence
+└── utils/              # Helpers
 ```
-
-**Supported file types:** `.py .js .ts .less .css .json .md`
-
-## Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
-| `LLM_MODEL` | `qwen2.5-coder:7b` | LLM model for generation |
-| `EMBED_MODEL` | `nomic-embed-text` | Embedding model |
 
 ## Tech Stack
 
@@ -80,6 +104,8 @@ src/code_rag_pipeline/
 - [LanceDB](https://lancedb.com/) — vector database
 - [Ollama](https://ollama.com/) — local LLM inference
 - [Typer](https://typer.tiangolo.com/) — CLI framework
+- [Questionary](https://questionary.readthedocs.io/) — interactive prompts
+- [Rich](https://rich.readthedocs.io/) — terminal formatting
 - [Tree-sitter](https://tree-sitter.github.io/) — AST parsing for code splitting
 
 ## License
