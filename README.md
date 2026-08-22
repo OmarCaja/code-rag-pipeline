@@ -15,9 +15,22 @@ Ask questions about your code in natural language — the pipeline parses, embed
 ### Installation
 
 ```bash
+uv tool install git+https://github.com/omarcaja/code-rag-pipeline.git
+```
+
+This installs `code-rag` globally. To update:
+
+```bash
+uv tool install --force git+https://github.com/omarcaja/code-rag-pipeline.git
+```
+
+Or install from source:
+
+```bash
 git clone https://github.com/omarcaja/code-rag-pipeline.git
 cd code-rag-pipeline
 uv sync
+uv run code-rag
 ```
 
 ### Start Ollama & Pull Models
