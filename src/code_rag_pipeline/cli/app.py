@@ -46,10 +46,6 @@ def main(
 
 def _do_index() -> None:
     console.print()
-    name = questionary.text("Project name:").ask()
-    if not name:
-        return
-
     path_str = questionary.text("Path to project (absolute or relative):").ask()
     if not path_str:
         return
@@ -59,6 +55,8 @@ def _do_index() -> None:
     if not path.is_dir():
         console.print(f"\n[red]✗ Not a directory:[/red] {path}")
         return
+
+    name = path.name
 
     console.print()
     console.print(Panel(
