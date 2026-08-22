@@ -6,6 +6,7 @@ import questionary
 import typer
 from llama_index.core import PromptTemplate
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.panel import Panel
 
 from code_rag_pipeline import __version__
@@ -16,6 +17,7 @@ from code_rag_pipeline.storage import index_nodes, list_projects, load_index
 app = typer.Typer(
     name="code-rag",
     help="Local RAG system to index and query codebases.",
+    add_completion=False
 )
 
 console = Console()
@@ -124,7 +126,7 @@ def _do_chat() -> None:
     console.print(Panel(
         f"[bold]{project_name}[/bold]",
         title="[cyan]Chat Mode[/cyan]",
-        subtitle="[dim]Type 'exit' to leave[/dim]",
+        subtitle="[dim]Type 'exit', 'chao', 'quit' or 'q' to leave[/dim]",
         border_style="green",
     ))
     console.print()
@@ -136,7 +138,7 @@ def _do_chat() -> None:
             console.print("\n[dim]Bye![/dim]")
             break
 
-        if question is None or question.strip().lower() in ("exit", "quit", "q"):
+        if question is None or question.strip().lower() in ("exit", "chao", "quit", "q"):
             console.print("[dim]Bye![/dim]")
             break
 
@@ -148,7 +150,7 @@ def _do_chat() -> None:
 
         console.print()
         console.print(Panel(
-            str(response),
+            Markdown(str(response)),
             title="[green]Assistant[/green]",
             border_style="green",
             padding=(0, 1),

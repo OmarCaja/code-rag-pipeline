@@ -36,6 +36,7 @@ def setup_llama_settings(
     embed_model = cast(BaseEmbedding, OllamaEmbedding(
         model_name=embed_model_name,
         base_url=ollama_host,
+        text_instruction="search_document: ",
         query_instruction=query_instruction,
     ))
 
