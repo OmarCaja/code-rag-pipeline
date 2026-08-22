@@ -4,6 +4,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 _TOML = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())
+VERSION: str = _TOML.get("project", {}).get("version", "0.0.0")
 _CONFIG: dict = _TOML.get("tool", {}).get("code-rag", {})
 
 OLLAMA_HOST: str = _CONFIG.get("ollama_host", "http://localhost:11434")
@@ -14,4 +15,5 @@ SUPPORTED_EXTENSIONS: list[str] = _CONFIG.get("supported_extensions",
                                               [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"])
 EXCLUDE_PATHS: list[str] = _CONFIG.get("exclude_paths", ["**/data/**"])
 EXT_MAP: dict[str, str] = {f".{k}": v for k, v in _CONFIG.get("ext_map", {}).items()}
-SYSTEM_PROMPT: str = _CONFIG.get("system_prompt", "You are a code assistant. Answer based on the code context.\n\nContext:\n{context_str}\n\nQuestion: {query_str}\n\nAnswer:")
+SYSTEM_PROMPT: str = _CONFIG.get("system_prompt",
+                                 "You are a code assistant. Answer based on the code context.\n\nContext:\n{context_str}\n\nQuestion: {query_str}\n\nAnswer:")

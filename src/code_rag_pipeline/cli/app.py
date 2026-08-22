@@ -9,8 +9,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-from code_rag_pipeline import __version__
-from code_rag_pipeline.config import SYSTEM_PROMPT, setup_llama_settings, setup_logging
+from code_rag_pipeline.config import SYSTEM_PROMPT, VERSION, setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
 from code_rag_pipeline.storage import index_nodes, list_projects, load_index
 
@@ -30,7 +29,7 @@ def main(
 ) -> None:
     setup_logging(logging.DEBUG if verbose else logging.WARNING)
 
-    console.print(f"[bold cyan]Code RAG Pipeline[/bold cyan] [dim]v{__version__}[/dim]\n")
+    console.print(f"[bold cyan]Code RAG Pipeline[/bold cyan] [dim]v{VERSION}[/dim]\n")
 
     choice = questionary.select(
         "What do you want to do?",
