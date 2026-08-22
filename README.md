@@ -56,39 +56,19 @@ Interactive menu:
 
 ## Configuration
 
-All settings live in `pyproject.toml` under `[tool.code-rag]`:
+All settings live in `src/code_rag_pipeline/config/config.toml`:
 
 ```toml
-[tool.code-rag]
+[default]
 ollama_host = "http://localhost:11434"
 llm_model = "qwen2.5-coder:7b"
 embed_model = "nomic-embed-text"
-data_dir = "data"
+data_dir = "~/.code-rag/data"
 supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
 exclude_paths = ["**/data/**"]
-system_prompt = """
-You are a code assistant. Answer the question based on the code context below.
-Cite specific file paths when relevant.
-
-Context:
-{context_str}
-
-Question: {query_str}
-
-Answer:
-"""
-
-[tool.code-rag.ext_map]
-py = "python"
-js = "javascript"
-ts = "typescript"
-json = "json"
-md = "markdown"
-toml = "toml"
-yaml = "yaml"
-less = "less"
-css = "css"
 ```
+
+The file is bundled with the package and read at runtime via `importlib.resources`. Edit it before installing, or fork and customize.
 
 ## Architecture
 
@@ -96,8 +76,9 @@ css = "css"
 src/code_rag_pipeline/
 ├── cli/                # Interactive CLI (Typer + Questionary + Rich)
 ├── config/
-│   ├── config.py       # Reads [tool.code-rag] from pyproject.toml
-│   ├── lancedb_settings.py  # LanceDB/index paths
+│   ├── config.toml     # All settings (bundled with package)
+│   ├── config.py       # Reads config.toml via importlib.resources
+│   ├── lancedb_settings.py  # LanceDB paths
 │   ├── logging.py      # Colored logging setup
 │   └── ollama_settings.py   # LlamaIndex Settings (LLM + embedding)
 ├── core/
@@ -107,7 +88,7 @@ src/code_rag_pipeline/
 │       ├── config_parser.py   # JSON/TOML/YAML → small token chunks
 │       └── fallback_parser.py # Everything else → token splitter
 ├── storage/
-│   └── vector_index.py # LanceDB vector store + docstore persistence
+│   └── vector_index.py # LanceDB vector store (no docstore needed)
 └── utils/              # Helpers
 ```
 

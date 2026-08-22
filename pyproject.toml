@@ -29,6 +29,9 @@ dependencies = [
 [project.scripts]
 code-rag = "code_rag_pipeline.cli.app:app"
 
+[tool.setuptools.package-data]
+code_rag_pipeline = ["config/config.toml"]
+
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",

@@ -1,19 +1,18 @@
 import tomllib
+from importlib.metadata import version
+from importlib.resources import files
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+VERSION: str = version("code-rag-pipeline")
 
-_TOML = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())
-VERSION: str = _TOML.get("project", {}).get("version", "0.0.0")
-_CONFIG: dict = _TOML.get("tool", {}).get("code-rag", {})
+_cfg = tomllib.loads((files("code_rag_pipeline.config") / "config.toml").read_text())
 
-OLLAMA_HOST: str = _CONFIG.get("ollama_host", "http://localhost:11434")
-LLM_MODEL: str = _CONFIG.get("llm_model", "qwen2.5-coder:7b")
-EMBED_MODEL: str = _CONFIG.get("embed_model", "nomic-embed-text")
-DATA_DIR: Path = PROJECT_ROOT / _CONFIG.get("data_dir", "data")
-SUPPORTED_EXTENSIONS: list[str] = _CONFIG.get("supported_extensions",
-                                              [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"])
-EXCLUDE_PATHS: list[str] = _CONFIG.get("exclude_paths", ["**/data/**"])
-EXT_MAP: dict[str, str] = {f".{k}": v for k, v in _CONFIG.get("ext_map", {}).items()}
-SYSTEM_PROMPT: str = _CONFIG.get("system_prompt",
-                                 "You are a code assistant. Answer based on the code context.\n\nContext:\n{context_str}\n\nQuestion: {query_str}\n\nAnswer:")
+OLLAMA_HOST: str = _cfg["default"]["ollama_host"]
+LLM_MODEL: str = _cfg["default"]["llm_model"]
+EMBED_MODEL: str = _cfg["default"]["embed_model"]
+DATA_DIR: Path = Path(_cfg["default"]["data_dir"]).expanduser()
+SUPPORTED_EXTENSIONS: list[str] = _cfg["default"]["supported_extensions"]
+EXCLUDE_PATHS: list[str] = _cfg["default"]["exclude_paths"]
+EXT_MAP: dict[str, str] = {f".{k}": v for k, v in _cfg["default"]["ext_map"].items()}
+SYSTEM_PROMPT: str = _cfg["default"].get("system_prompt",
+                                         "You are a code assistant. Answer based on the code context.\n\nContext:\n{context_str}\n\nQuestion: {query_str}\n\nAnswer:")
