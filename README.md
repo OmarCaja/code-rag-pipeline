@@ -51,7 +51,7 @@ uv run code-rag
 ```
 
 Interactive menu:
-1. **Chat with a project** — select an indexed project and ask questions
+1. **Chat with a project** — select an indexed project and ask questions. Type `new` to reset conversation.
 2. **Index a new project** — provide a path, project name is derived from the folder
 
 ## Configuration
@@ -66,6 +66,18 @@ embed_model = "nomic-embed-text"
 data_dir = "~/.code-rag/data"
 supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
 exclude_paths = ["**/data/**"]
+system_prompt = "You are a code assistant. Answer questions based on the provided context. Cite specific file paths when relevant."
+
+[default.ext_map]
+py = "python"
+js = "javascript"
+ts = "typescript"
+json = "json"
+md = "markdown"
+toml = "toml"
+yaml = "yaml"
+less = "less"
+css = "css"
 ```
 
 The file is bundled with the package and read at runtime via `importlib.resources`. Edit it before installing, or fork and customize.
@@ -84,6 +96,7 @@ src/code_rag_pipeline/
 ├── core/
 │   ├── loaders/        # SimpleDirectoryReader with metadata enrichment
 │   └── parsers/        # AST-based & fallback code splitters
+│       ├── base.py            # BaseCodeParser abstract class
 │       ├── python_parser.py   # Python → CodeSplitter (AST)
 │       ├── config_parser.py   # JSON/TOML/YAML → small token chunks
 │       └── fallback_parser.py # Everything else → token splitter
@@ -101,6 +114,7 @@ src/code_rag_pipeline/
 - [Questionary](https://questionary.readthedocs.io/) — interactive prompts
 - [Rich](https://rich.readthedocs.io/) — terminal formatting
 - [Tree-sitter](https://tree-sitter.github.io/) — AST parsing for code splitting
+- [tiktoken](https://github.com/openai/tiktoken) — token counting for chat memory
 
 ## License
 

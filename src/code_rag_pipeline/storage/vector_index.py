@@ -27,6 +27,11 @@ def index_nodes(
     Returns:
         The built VectorStoreIndex, ready for querying.
     """
+    db = lancedb.connect(str(LANCEDB_URI))
+    if project_name in db.table_names():
+        db.drop_table(project_name)
+        logger.info("Dropped existing table '%s'.", project_name)
+
     vector_store = LanceDBVectorStore(uri=str(LANCEDB_URI), table_name=project_name, mode="overwrite")
     index = VectorStoreIndex(nodes=nodes, storage_context=StorageContext.from_defaults(vector_store=vector_store))
 

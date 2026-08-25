@@ -4,7 +4,7 @@ from typing import Annotated
 
 import questionary
 import typer
-from llama_index.core import PromptTemplate
+from llama_index.core.memory import ChatMemoryBuffer
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -12,6 +12,7 @@ from rich.panel import Panel
 from code_rag_pipeline.config import SYSTEM_PROMPT, VERSION, setup_llama_settings, setup_logging
 from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
 from code_rag_pipeline.storage import index_nodes, list_projects, load_index
+from code_rag_pipeline.utils import count_tokens, show_token_bar
 
 app = typer.Typer(
     name="code-rag",
@@ -116,16 +117,18 @@ def _do_chat() -> None:
         console.print(f"\n[red]✗ {err}[/red]")
         return
 
-    query_engine = index.as_query_engine(
+    memory = ChatMemoryBuffer.from_defaults(token_limit=4096)
+    chat_engine = index.as_chat_engine(
         similarity_top_k=5,
-        text_qa_template=PromptTemplate(SYSTEM_PROMPT),
+        memory=memory,
+        system_prompt=SYSTEM_PROMPT,
     )
 
     console.print()
     console.print(Panel(
         f"[bold]{project_name}[/bold]",
         title="[cyan]Chat Mode[/cyan]",
-        subtitle="[dim]Type 'exit', 'chao', 'quit' or 'q' to leave[/dim]",
+        subtitle="[dim]'new' = fresh chat | 'exit' = quit[/dim]",
         border_style="green",
     ))
     console.print()
@@ -141,11 +144,21 @@ def _do_chat() -> None:
             console.print("[dim]Bye![/dim]")
             break
 
+        if question.strip().lower() == "new":
+            memory = ChatMemoryBuffer.from_defaults(token_limit=4096)
+            chat_engine = index.as_chat_engine(
+                similarity_top_k=5,
+                memory=memory,
+                system_prompt=SYSTEM_PROMPT,
+            )
+            console.print(Panel("[bold]Fresh session[/bold]  [dim](4096 token memory)[/dim]", border_style="green", padding=(0, 1)))
+            continue
+
         if not question.strip():
             continue
 
         with console.status("[cyan]Thinking...[/cyan]", spinner="dots"):
-            response = query_engine.query(question)
+            response = chat_engine.chat(question)
 
         console.print()
         console.print(Panel(
@@ -154,6 +167,9 @@ def _do_chat() -> None:
             border_style="green",
             padding=(0, 1),
         ))
+        messages = memory.get()
+        used = sum(count_tokens(str(m)) for m in messages) if messages else 0
+        show_token_bar(used, 4096, console)
         console.print()
 
 
