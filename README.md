@@ -50,6 +50,12 @@ cd code-rag-pipeline
 uv sync
 ```
 
+To reinstall after changes:
+
+```bash
+uv tool install --force git+https://github.com/omarcaja/code-rag-pipeline.git
+```
+
 ### Setup Ollama
 
 ```bash
@@ -61,7 +67,11 @@ docker compose --profile init up
 ```
 
 This pulls two models into a shared Docker volume:
-| Model | Purpose | |-------|---------| | `nomic-embed-text` | Code embeddings | | `qwen2.5-coder:7b` | Code reasoning |
+
+| Model | Purpose |
+|-------|---------|
+| `nomic-embed-text` | Code embeddings |
+| `qwen2.5-coder:7b` | Code reasoning |
 
 ### Run
 
