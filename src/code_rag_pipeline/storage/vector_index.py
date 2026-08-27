@@ -1,3 +1,4 @@
+import functools
 import logging
 from collections.abc import Sequence
 
@@ -11,23 +12,16 @@ from code_rag_pipeline.config import LANCEDB_URI
 logger = logging.getLogger(__name__)
 
 
+@functools.lru_cache(maxsize=1)
+def _get_db():
+    return lancedb.connect(str(LANCEDB_URI))
+
+
 def index_nodes(
         nodes: Sequence[BaseNode],
         project_name: str,
 ) -> VectorStoreIndex:
-    """Embeds nodes via the global `Settings.embed_model` and stores them in LanceDB.
-
-    One LanceDB table per project. LanceDB stores vectors + text, no separate
-    docstore needed.
-
-    Args:
-        nodes: Nodes produced by the document parsers/splitters.
-        project_name: Unique name for the project; used as the table name.
-
-    Returns:
-        The built VectorStoreIndex, ready for querying.
-    """
-    db = lancedb.connect(str(LANCEDB_URI))
+    db = _get_db()
     if project_name in db.table_names():
         db.drop_table(project_name)
         logger.info("Dropped existing table '%s'.", project_name)
@@ -39,14 +33,7 @@ def index_nodes(
     return index
 
 
-def load_index(
-        project_name: str,
-) -> VectorStoreIndex:
-    """Reloads a previously indexed project for querying.
-
-    Args:
-        project_name: Indexed project to load; used as the LanceDB table name.
-    """
+def load_index(project_name: str) -> VectorStoreIndex:
     if project_name not in list_projects():
         raise FileNotFoundError(
             f"No index found for project '{project_name}'. Run 'code-rag index {project_name} <path>' first.")
@@ -56,6 +43,5 @@ def load_index(
 
 
 def list_projects() -> list[str]:
-    """Returns names of all indexed projects (LanceDB tables)."""
-    db = lancedb.connect(str(LANCEDB_URI))
-    return sorted(table_name for table_name in db.table_names() if not table_name.startswith("_"))
+    db = _get_db()
+    return sorted(name for name in db.table_names() if not name.startswith("_"))

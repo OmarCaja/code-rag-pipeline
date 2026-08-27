@@ -3,17 +3,8 @@ ollama_host = "http://localhost:11434"
 llm_model = "qwen2.5-coder:7b"
 embed_model = "nomic-embed-text"
 data_dir = "~/.code-rag/data"
-supported_extensions = [".py", ".js", ".ts", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
-exclude_paths = ["**/data/**"]
+supported_extensions = [".py", ".js", ".jsx", ".ts", ".tsx", ".astro", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
+exclude_paths = ["**/data/**", "**/dist/**", "**/node_modules/**", "**/*lock*"]
 system_prompt = "You are a code assistant. Answer questions based on the provided context. Cite specific file paths when relevant."
-
-[default.ext_map]
-py = "python"
-js = "javascript"
-ts = "typescript"
-json = "json"
-md = "markdown"
-toml = "toml"
-yaml = "yaml"
-less = "less"
-css = "css"
+memory_limit = 4096
+similarity_top_k = 5

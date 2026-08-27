@@ -24,13 +24,16 @@ Models must be pulled before the pipeline runs; a missing model fails at the liv
 - `config/config.toml` — all settings (bundled with package).
 - `config/config.py` — reads `config.toml` via `importlib.resources`.
 - `config/ollama_settings.py` — `setup_llama_settings()` mutates LlamaIndex global `Settings` (LLM + embedding). Values come from `config/config.py`.
-- `config/lancedb_settings.py` — `LANCEDB_URI`, `INDEX_DIR` paths. Derived from `DATA_DIR` in `config/config.py`.
-- `core/loaders/document_loader.py` — `SimpleDirectoryReader` restricted to `SUPPORTED_EXTENSIONS`, recursive, hidden files excluded, `EXCLUDE_PATHS` applied. Enriches document metadata with `language` field via `EXT_MAP`.
+- `core/loaders/document_loader.py` — `SimpleDirectoryReader` restricted to `SUPPORTED_EXTENSIONS`, recursive, hidden files excluded, `EXCLUDE_PATHS` applied.
 - `core/parsers/` — `CodeParserOrchestrator` (factory.py) routes documents by file extension to a parser; `.py` → `PythonCodeParser` (AST-based `CodeSplitter`), `.json/.toml/.yaml` → `ConfigParser` (small 128-token chunks), everything else / parse failures → `FallbackParser` (token splitter). Add a new language by registering in `_parser_map` in `factory.py`.
 - `storage/vector_index.py` — `index_nodes()` drops existing table if present, then embeds BaseNodes via global `Settings.embed_model` into a new `LanceDBVectorStore` (one table per project). `list_projects()` reads table names from LanceDB directly.
 - `cli/app.py` — interactive CLI. `@app.callback()` with `invoke_without_command=True` shows a menu (Chat/Index). Uses `questionary` for arrow-key selectors, `rich` for formatting. Chat uses `ChatMemoryBuffer` (4096 tokens) with `as_chat_engine()`. Type `new` to reset conversation. Responses rendered in panels with token bar and spinner during query.
 - Public API is re-exported through package `__init__.py` files (`config`, `core`, `utils`); import from those namespaces, not deep module paths.
 - `config/logging.py` `setup_logging()` must run before other imports trigger loggers; it also silences noisy third-party loggers.
+
+## Conventions
+
+- **Imports:** relative for same-package (`from .base import ...`), absolute for cross-package (`from code_rag_pipeline.config import ...`). Never use `..` parent relative imports. `__init__.py` re-exports always use relative.
 
 ## Configuration
 

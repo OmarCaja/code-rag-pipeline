@@ -1,18 +1,13 @@
 import logging
-from pathlib import Path
 from typing import Annotated
 
 import questionary
 import typer
-from llama_index.core.memory import ChatMemoryBuffer
 from rich.console import Console
-from rich.markdown import Markdown
-from rich.panel import Panel
 
-from code_rag_pipeline.config import SYSTEM_PROMPT, VERSION, setup_llama_settings, setup_logging
-from code_rag_pipeline.core import CodeParserOrchestrator, load_documents
-from code_rag_pipeline.storage import index_nodes, list_projects, load_index
-from code_rag_pipeline.utils import count_tokens, show_token_bar
+from code_rag_pipeline.config import VERSION, setup_llama_settings, setup_logging
+from .chat_cmd import do_chat
+from .index_cmd import do_index
 
 app = typer.Typer(
     name="code-rag",
@@ -21,7 +16,6 @@ app = typer.Typer(
 )
 
 console = Console()
-logger = logging.getLogger(__name__)
 
 
 @app.callback(invoke_without_command=True)
@@ -29,148 +23,22 @@ def main(
         verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Enable debug logging.")] = False,
 ) -> None:
     setup_logging(logging.DEBUG if verbose else logging.WARNING)
+    setup_llama_settings()
 
     console.print(f"[bold cyan]Code RAG Pipeline[/bold cyan] [dim]v{VERSION}[/dim]\n")
 
+    commands = {
+        "Chat with a project": do_chat,
+        "Index a new project": do_index,
+    }
+
     choice = questionary.select(
         "What do you want to do?",
-        choices=["Chat with a project", "Index a new project"],
+        choices=list(commands),
     ).ask()
 
-    if choice is None:
-        return
-
-    if choice == "Index a new project":
-        _do_index()
-    else:
-        _do_chat()
-
-
-def _do_index() -> None:
-    console.print()
-    path_str = questionary.text("Path to project (absolute or relative):").ask()
-    if not path_str:
-        return
-
-    path = Path(path_str).expanduser().resolve()
-
-    if not path.is_dir():
-        console.print(f"\n[red]✗ Not a directory:[/red] {path}")
-        return
-
-    name = path.name
-
-    console.print()
-    console.print(Panel(
-        f"[bold]{name}[/bold]\n[dim]{path}[/dim]",
-        title="[cyan]Indexing Project[/cyan]",
-        border_style="cyan",
-    ))
-    console.print()
-
-    try:
-        with console.status("[cyan]Loading documents...[/cyan]", spinner="dots"):
-            documents = load_documents(path)
-        console.print(f"  [green]✓[/green] Loaded [bold]{len(documents)}[/bold] documents")
-
-        with console.status("[cyan]Parsing and splitting...[/cyan]", spinner="dots"):
-            orchestrator = CodeParserOrchestrator()
-            nodes = orchestrator.split_documents(documents)
-        console.print(f"  [green]✓[/green] Generated [bold]{len(nodes)}[/bold] nodes")
-
-        with console.status("[cyan]Embedding and storing...[/cyan]", spinner="dots"):
-            setup_llama_settings()
-            index_nodes(nodes, name)
-        console.print("  [green]✓[/green] Stored in LanceDB")
-
-        console.print()
-        console.print(Panel("[bold green]Done![/bold green]", border_style="green"))
-
-    except Exception as err:
-        logger.exception("An unexpected error occurred during processing.")
-        console.print(f"\n[red]✗ Processing failed:[/red] {err}")
-
-
-def _do_chat() -> None:
-    console.print()
-
-    projects = list_projects()
-
-    if not projects:
-        console.print("[yellow]No projects indexed yet.[/yellow]")
-        console.print("[dim]  Run 'code-rag' and select 'Index a new project' first.[/dim]")
-        return
-
-    project_name = questionary.select(
-        "Select a project:",
-        choices=projects,
-    ).ask()
-
-    if not project_name:
-        return
-
-    try:
-        with console.status("[cyan]Loading index...[/cyan]", spinner="dots"):
-            setup_llama_settings()
-            index = load_index(project_name)
-    except FileNotFoundError as err:
-        console.print(f"\n[red]✗ {err}[/red]")
-        return
-
-    memory = ChatMemoryBuffer.from_defaults(token_limit=4096)
-    chat_engine = index.as_chat_engine(
-        similarity_top_k=5,
-        memory=memory,
-        system_prompt=SYSTEM_PROMPT,
-    )
-
-    console.print()
-    console.print(Panel(
-        f"[bold]{project_name}[/bold]",
-        title="[cyan]Chat Mode[/cyan]",
-        subtitle="[dim]'new' = fresh chat | 'exit' = quit[/dim]",
-        border_style="green",
-    ))
-    console.print()
-
-    while True:
-        try:
-            question = questionary.text("You:").ask()
-        except (KeyboardInterrupt, EOFError):
-            console.print("\n[dim]Bye![/dim]")
-            break
-
-        if question is None or question.strip().lower() in ("exit", "chao", "quit", "q"):
-            console.print("[dim]Bye![/dim]")
-            break
-
-        if question.strip().lower() == "new":
-            memory = ChatMemoryBuffer.from_defaults(token_limit=4096)
-            chat_engine = index.as_chat_engine(
-                similarity_top_k=5,
-                memory=memory,
-                system_prompt=SYSTEM_PROMPT,
-            )
-            console.print(Panel("[bold]Fresh session[/bold]  [dim](4096 token memory)[/dim]", border_style="green", padding=(0, 1)))
-            continue
-
-        if not question.strip():
-            continue
-
-        with console.status("[cyan]Thinking...[/cyan]", spinner="dots"):
-            response = chat_engine.chat(question)
-
-        console.print()
-        console.print(Panel(
-            Markdown(str(response)),
-            title="[green]Assistant[/green]",
-            border_style="green",
-            padding=(0, 1),
-        ))
-        messages = memory.get()
-        used = sum(count_tokens(str(m)) for m in messages) if messages else 0
-        show_token_bar(used, 4096, console)
-        console.print()
+    if choice is not None:
+        commands[choice]()
 
 
 if __name__ == "__main__":

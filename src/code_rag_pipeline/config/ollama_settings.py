@@ -17,9 +17,7 @@ def setup_llama_settings(
         embed_model_name: str = EMBED_MODEL,
         ollama_host: str = OLLAMA_HOST,
         query_instruction: str = "search_query: ",
-) -> tuple[LLM, BaseEmbedding]:
-    """Configures LlamaIndex global settings to connect with local Ollama services."""
-
+) -> None:
     logger.info(
         "Initializing LlamaIndex settings with host='%s', llm='%s', embed_model='%s'",
         ollama_host,
@@ -44,4 +42,3 @@ def setup_llama_settings(
     Settings.embed_model = embed_model
 
     logger.info("LlamaIndex global settings successfully updated.")
-    return llm, embed_model

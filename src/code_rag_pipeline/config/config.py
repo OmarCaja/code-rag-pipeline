@@ -13,6 +13,8 @@ EMBED_MODEL: str = _cfg["default"]["embed_model"]
 DATA_DIR: Path = Path(_cfg["default"]["data_dir"]).expanduser()
 SUPPORTED_EXTENSIONS: list[str] = _cfg["default"]["supported_extensions"]
 EXCLUDE_PATHS: list[str] = _cfg["default"]["exclude_paths"]
-EXT_MAP: dict[str, str] = {f".{k}": v for k, v in _cfg["default"]["ext_map"].items()}
 SYSTEM_PROMPT: str = _cfg["default"].get("system_prompt",
                                          "You are a code assistant. Answer based on the code context.\n\nContext:\n{context_str}\n\nQuestion: {query_str}\n\nAnswer:")
+MEMORY_LIMIT: int = _cfg["default"]["memory_limit"]
+SIMILARITY_TOP_K: int = _cfg["default"]["similarity_top_k"]
+LANCEDB_URI: Path = DATA_DIR / "lancedb"

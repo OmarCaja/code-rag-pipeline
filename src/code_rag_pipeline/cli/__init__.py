@@ -1,5 +1,7 @@
 """CLI module for code-rag-pipeline."""
 
-from code_rag_pipeline.cli.app import app
+from .app import app
+from .chat_cmd import do_chat
+from .index_cmd import do_index
 
-__all__ = ["app"]
+__all__ = ["app", "do_chat", "do_index"]
