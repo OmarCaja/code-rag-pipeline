@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 _python = CodeSplitterParser(language="python")
 _js = CodeSplitterParser(language="javascript")
 _ts = CodeSplitterParser(language="typescript")
+_java = CodeSplitterParser(language="java")
 _config = TokenSplitterParser(chunk_size=128, chunk_overlap=20)
 _fallback = TokenSplitterParser()
 
@@ -20,6 +21,7 @@ _parser_map: dict[str, CodeSplitterParser | TokenSplitterParser] = {
     ".jsx": _js,
     ".ts": _ts,
     ".tsx": _ts,
+    ".java": _java,
     ".json": _config,
     ".toml": _config,
     ".yaml": _config,
