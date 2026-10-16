@@ -1,7 +1,9 @@
 [default]
-ollama_host = "http://localhost:11434"
-llm_model = "qwen2.5-coder:7b"
-embed_model = "nomic-embed-text"
+llm_api_base = "http://localhost:1234/v1"
+llm_model = "qwen/qwen3-coder-30b"
+embed_model = "text-embedding-qwen3-embedding-4b"
+query_instruction = "Instruct: Given a question about a codebase, retrieve the code snippets that answer it\nQuery: "
+context_window = 32768
 data_dir = "~/.code-rag/data"
 supported_extensions = [".py", ".js", ".jsx", ".ts", ".tsx", ".astro", ".less", ".css", ".json", ".md", ".toml", ".yaml", ".java", ".jsp", ".tag", ".xml"]
 exclude_paths = ["**/data/**", "**/dist/**", "**/node_modules/**", "**/*lock*"]

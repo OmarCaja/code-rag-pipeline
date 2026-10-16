@@ -35,8 +35,6 @@ def do_index() -> None:
 
         with console.status("[cyan]Loading documents...[/cyan]", spinner="dots"):
             documents = load_documents(path)
-        for doc in documents:
-            doc.metadata["file_path"] = doc.metadata.get("file_path", "").removeprefix(f"{path}/")
         console.print(f"  [green]✓[/green] Loaded [bold]{len(documents)}[/bold] documents")
 
         with console.status("[cyan]Parsing and splitting...[/cyan]", spinner="dots"):

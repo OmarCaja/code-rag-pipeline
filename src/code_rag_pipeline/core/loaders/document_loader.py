@@ -26,6 +26,8 @@ def load_documents(target_dir: Path | str) -> list[Document]:
     )
 
     documents = reader.load_data()
+    for doc in documents:
+        doc.metadata["file_path"] = doc.metadata.get("file_path", "").removeprefix(f"{path}/")
 
     loaded_files = [doc.metadata.get("file_path", "Unknown Path") for doc in documents]
     logger.info("Successfully loaded %d document(s).", len(documents))

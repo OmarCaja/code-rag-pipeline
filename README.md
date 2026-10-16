@@ -5,7 +5,7 @@
 **Ask your codebase anything.**
 
 A local Retrieval-Augmented Generation system that indexes codebases and answers questions using **LlamaIndex**,
-**LanceDB**, and **Ollama**.
+**LanceDB**, and **LM Studio**.
 
 *No cloud. No API keys. Your code stays on your machine.*
 
@@ -24,7 +24,7 @@ A local Retrieval-Augmented Generation system that indexes codebases and answers
 - 🗂️ **Multi-language support** — Python, JavaScript, TypeScript, JSON, YAML, TOML, and more
 - 🧠 **AST-aware parsing** — understands code structure, not just text
 - 💬 **Interactive chat** — ask questions about your code in natural language
-- 🔒 **100% local** — runs on your machine with Ollama, no data leaves your system
+- 🔒 **100% local** — runs on your machine with LM Studio, no data leaves your system
 - 📁 **Git URL support** — index repos directly from GitHub URLs
 - ⚡ **Fast indexing** — efficient embedding with LanceDB vector storage
 
@@ -35,7 +35,7 @@ A local Retrieval-Augmented Generation system that indexes codebases and answers
 ### Prerequisites
 
 - **Python 3.12+**
-- **[Ollama](https://ollama.com/)** running locally (or via Docker)
+- **[LM Studio](https://lmstudio.ai/)** with its local server running (Apple Silicon recommended)
 - **[uv](https://docs.astral.sh/uv/)** package manager
 
 ### Install
@@ -56,22 +56,38 @@ To reinstall after changes:
 uv tool install --force git+https://github.com/omarcaja/code-rag-pipeline.git
 ```
 
-### Setup Ollama
+#### Editable install (for development)
+
+Install `code-rag` and `code-rag-mcp` globally on your `PATH`, linked to your local checkout:
 
 ```bash
-# Start Ollama server
-docker compose up -d ollama
-
-# Pull required models
-docker compose --profile init up
+cd code-rag-pipeline
+uv tool install --editable .
 ```
 
-This pulls two models into a shared Docker volume:
+Source edits (including `config.toml`) take effect on the next run, with no reinstall needed. Reinstall only after changing
+dependencies or `[project.scripts]` in `pyproject.toml`:
 
-| Model | Purpose |
-|-------|---------|
-| `nomic-embed-text` | Code embeddings |
-| `qwen2.5-coder:7b` | Code reasoning |
+```bash
+uv tool install --editable --reinstall .
+```
+
+To remove it: `uv tool uninstall code-rag-pipeline`. Run `uv tool list` to see what's installed.
+
+### Setup LM Studio
+
+```bash
+lms get "qwen/qwen3-coder-30b@6bit" --mlx
+lms get https://huggingface.co/Qwen/Qwen3-Embedding-4B-GGUF --gguf
+lms server start
+```
+
+| Model | Purpose | Size |
+|-------|---------|------|
+| `qwen/qwen3-coder-30b` (MLX 6-bit, MoE 3B active) | Code reasoning | ~25 GB |
+| `text-embedding-qwen3-embedding-4b` (GGUF) | Code embeddings | ~2.5–4 GB |
+
+Sized for an M4 Pro with 48 GB. On 24–32 GB machines use `qwen/qwen3-coder-30b@4bit` (~17 GB) and `Qwen3-Embedding-0.6B`. Load the LLM with at least `context_window` (32768) tokens of context.
 
 ### Run
 
@@ -96,6 +112,21 @@ uv run code-rag
     - Type `new` to reset conversation
     - Type `exit` to quit
 
+### Use from an agent (MCP)
+
+`code-rag-mcp` runs an MCP server over stdio against the same indexes as the CLI. Register it with Claude Code:
+
+```bash
+claude mcp add code-rag -- uv --directory /path/to/code-rag-pipeline run code-rag-mcp
+```
+
+| Tool | Purpose |
+|------|---------|
+| `list_projects()` | Indexed project names |
+| `search_code(project, query, top_k=8)` | Relevant code chunks with file path and score (embedding model only) |
+| `ask_codebase(project, question)` | One-shot answer from the local LLM over retrieved code |
+| `index_project(path_or_url)` | Index or re-index a local path or git URL |
+
 ---
 
 ## ⚙️ Configuration
@@ -104,11 +135,13 @@ All settings live in `src/code_rag_pipeline/config/config.toml`:
 
 ```toml
 [default]
-ollama_host = "http://localhost:11434"
-llm_model = "qwen2.5-coder:7b"
-embed_model = "nomic-embed-text"
+llm_api_base = "http://localhost:1234/v1"   # env LLM_API_BASE overrides
+llm_model = "qwen/qwen3-coder-30b"
+embed_model = "text-embedding-qwen3-embedding-4b"
+query_instruction = "Instruct: Given a question about a codebase, retrieve the code snippets that answer it\nQuery: "
+context_window = 32768
 data_dir = "~/.code-rag/data"
-supported_extensions = [".py", ".js", ".jsx", ".ts", ".tsx", ".astro", ".less", ".css", ".json", ".md", ".toml", ".yaml"]
+supported_extensions = [".py", ".js", ".jsx", ".ts", ".tsx", ".astro", ".less", ".css", ".json", ".md", ".toml", ".yaml", ".java", ".jsp", ".tag", ".xml"]
 exclude_paths = ["**/data/**", "**/dist/**", "**/node_modules/**", "**/*lock*"]
 system_prompt = "You are a code assistant. Answer questions based on the provided context. Cite specific file paths when relevant."
 memory_limit = 4096
@@ -128,11 +161,13 @@ src/code_rag_pipeline/
 │   ├── chat_cmd.py             # Chat engine with memory
 │   └── index_cmd.py            # Project indexing workflow
 │
+├── mcp_server.py               # MCP server (stdio) for agents
+│
 ├── config/
 │   ├── config.toml             # All settings
 │   ├── config.py               # Config reader
 │   ├── logging.py              # Colored logging
-│   └── ollama_settings.py      # LLM & embedding setup
+│   └── llm_settings.py         # LLM & embedding setup
 │
 ├── core/
 │   ├── loaders/
@@ -154,7 +189,7 @@ src/code_rag_pipeline/
 
 1. **Load** — `SimpleDirectoryReader` scans your project, filtering by supported extensions
 2. **Parse** — Documents route to AST-based splitters (Python/JS/TS) or token splitters (configs)
-3. **Embed** — Nodes embed via Ollama's `nomic-embed-text` model
+3. **Embed** — Nodes embed via LM Studio's `Qwen3-Embedding-4B` model
 4. **Store** — Vectors persist in LanceDB (one table per project)
 5. **Chat** — Query engine retrieves relevant context and generates answers
 
@@ -166,7 +201,8 @@ src/code_rag_pipeline/
 |----------------------------------------------------|-------------------------------------|
 | [LlamaIndex](https://docs.llamaindex.ai/)          | Data framework for LLM applications |
 | [LanceDB](https://lancedb.com/)                    | Vector database                     |
-| [Ollama](https://ollama.com/)                      | Local LLM inference                 |
+| [LM Studio](https://lmstudio.ai/)                  | Local LLM inference                 |
+| [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) | Agent tool server |
 | [Typer](https://typer.tiangolo.com/)               | CLI framework                       |
 | [Rich](https://rich.readthedocs.io/)               | Terminal formatting                 |
 | [Questionary](https://questionary.readthedocs.io/) | Interactive prompts                 |

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "code-rag": {
+      "command": "uv",
+      "args": ["--directory", "${CLAUDE_PROJECT_DIR:-.}", "run", "code-rag-mcp"]
+    }
+  }
+}

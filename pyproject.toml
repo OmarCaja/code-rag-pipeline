@@ -5,15 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "code-rag-pipeline"
 version = "2.1.0"
-description = "A local RAG system to index and query codebases using LlamaIndex, LanceDB, and Ollama."
+description = "A local RAG system to index and query codebases using LlamaIndex, LanceDB, and LM Studio."
 authors = [{ name = "Omar Caja" }]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "llama-index-core>=0.10.0",
     "llama-index-vector-stores-lancedb>=0.2.0",
-    "llama-index-llms-ollama>=0.2.0",
-    "llama-index-embeddings-ollama>=0.2.0",
     "lancedb>=0.6.0",
     "colorlog>=6.12.0",
     "typer>=0.27.1",
@@ -21,10 +19,14 @@ dependencies = [
     "questionary>=2.1.0",
     "tree-sitter-language-pack>=1.14.3",
     "pandas>=3.0.5",
+    "llama-index-llms-openai-like>=0.8.1",
+    "llama-index-embeddings-openai-like>=0.4.0",
+    "mcp>=2.3.0",
 ]
 
 [project.scripts]
 code-rag = "code_rag_pipeline.cli.app:app"
+code-rag-mcp = "code_rag_pipeline.mcp_server:main"
 
 [tool.setuptools.package-data]
 code_rag_pipeline = ["config/config.toml"]

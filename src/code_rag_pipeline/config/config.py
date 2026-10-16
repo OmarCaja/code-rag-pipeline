@@ -1,3 +1,4 @@
+import os
 import tomllib
 from importlib.metadata import version
 from importlib.resources import files
@@ -7,9 +8,11 @@ VERSION: str = version("code-rag-pipeline")
 
 _cfg = tomllib.loads((files("code_rag_pipeline.config") / "config.toml").read_text())
 
-OLLAMA_HOST: str = _cfg["default"]["ollama_host"]
+LLM_API_BASE: str = os.environ.get("LLM_API_BASE", _cfg["default"]["llm_api_base"])
 LLM_MODEL: str = _cfg["default"]["llm_model"]
 EMBED_MODEL: str = _cfg["default"]["embed_model"]
+QUERY_INSTRUCTION: str = _cfg["default"]["query_instruction"]
+CONTEXT_WINDOW: int = _cfg["default"]["context_window"]
 DATA_DIR: Path = Path(_cfg["default"]["data_dir"]).expanduser()
 SUPPORTED_EXTENSIONS: list[str] = _cfg["default"]["supported_extensions"]
 EXCLUDE_PATHS: list[str] = _cfg["default"]["exclude_paths"]
